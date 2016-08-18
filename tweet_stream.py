@@ -41,7 +41,7 @@ class TweetListener(tweepy.StreamListener):
 #For macbook
 # config = cnfg.load("/Users/bholligan/.ssh/.twitter_config")
 #For ubuntu
-config = cnfg.load("/home/bholligan/.twitter_config"
+config = cnfg.load("/home/bholligan/.twitter_config")
 
 auth = tweepy.OAuthHandler(config["consumer_key"],
                            config["consumer_secret"])
