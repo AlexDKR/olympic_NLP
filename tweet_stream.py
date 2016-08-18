@@ -13,6 +13,13 @@ from pymongo import MongoClient
 
 class TweetListener(tweepy.StreamListener):
 
+    def __init__(self):
+        super().__init__()
+        client = MongoClient()
+        # Use tweetdb database
+        self.db = client.tweetdb
+
+
     def on_error(self, error_msg):
         print('Error: {}'.format(error_msg))
 
@@ -22,11 +29,6 @@ class TweetListener(tweepy.StreamListener):
 
     def on_data(self, data):
         """This will be called each time we receive stream data"""
-        client = MongoClient()
-
-        # Use tweetdb database
-        db = client.tweetdb
-
         # Decode JSON
         try:
             datajson = json.loads(data)
@@ -34,7 +36,7 @@ class TweetListener(tweepy.StreamListener):
             # We only want to store tweets in English
             if "lang" in datajson and datajson["lang"] == "en":
                 # Store tweet info into the cooltweets collection.
-                db.tweetdb.insert(datajson)
+                self.db.tweetdb.insert(datajson)
         except Exception:
             print("Error in parsing data {}".format(data))
 
