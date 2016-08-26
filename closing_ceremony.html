@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Olympic Closing Ceremony Trends</title>
+    <meta charset="utf-8">
+
+    <style type="text/css">
+body {
+      font: 10px sans-serif;
+      }
+
+      .axis path,
+      .axis line {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+      }
+
+      .dot {
+      stroke: #000;
+      }
+    </style>
+  </head>
+  <body>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.js"></script>
+    <script>
+var margin = {top: 20, right: 180, bottom: 230, left: 40},
+  width = 1120 - margin.left - margin.right,
+  height = 700 - margin.top - margin.bottom;
+
+var formatDate = d3.time.format("%Y-%m-%d %H:%M:%S");
+
+var x = d3.time.scale()
+  .range([0, width]);
+
+var y = d3.scale.linear()
+  .range([height, 0]);
+
+var pos_pol = d3.scale.linear()
+  .range([(margin.bottom - 20)/2, 0]);
+
+var neg_pol = d3.scale.linear()
+  .range([(margin.bottom - 20)/2, 0]);
+
+var color = d3.scale.category20();
+var color_polarity = d3.scale.category20();
+
+var xAxis = d3.svg.axis()
+  .scale(x)
+  .orient("bottom");
+
+var yAxis = d3.svg.axis()
+  .scale(y)
+  .orient("left");
+
+var svg = d3.select("body").append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+d3.csv("data_d3.csv", function(error, data) {
+  if (error) throw error;
+
+  var dataTopics = {};
+
+  data.forEach(function(d) {
+    d.pol_diff = +d.Polarity_Diff;
+    d.topic_relevance = +d.Topic_Relevance;
+    d.date = formatDate.parse(d.Time);
+    d.topic_keywords = d.Topic_Keywords;
+
+    dataTopics[d.topic_keywords] = {
+      pol_diff: d.pol_diff
+    }
+  });
+
+
+x.domain(d3.extent(data, function(d) { return d.date; })).nice();
+y.domain(d3.extent(data, function(d) { return d.topic_relevance; })).nice();
+
+pos_pol.domain([100, 0]);
+neg_pol.domain([-100, -0])
+
+svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis)
+    .append("text")
+    .attr("class", "label")
+    .attr("x", width)
+    .attr("y", -6)
+    .style("text-anchor", "end")
+    .text("Time");
+
+svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis)
+    .append("text")
+    .attr("class", "label")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 6)
+    .attr("dy", ".71em")
+    .style("text-anchor", "end")
+    .text("Relevance");
+
+svg.selectAll(".dot")
+    .data(data)
+    .enter().append("circle")
+    .attr("class", "dot")
+    .attr("r", 3.5)
+    .attr("cx", function(d) { return x(d.date); })
+    .attr("cy", function(d) { return y(d.topic_relevance); })
+    .style("fill", function(d) { return color(d.topic_keywords); })
+    .style("opacity", 0.0);
+
+var line = svg.append("line")
+    .attr("x1", 0)
+    .attr("y1", height + margin.top + margin.bottom/2)
+    .attr("x2", 80*12 - 20)
+    .attr("y2", height + margin.top + margin.bottom/2)
+    .style("stroke", "black");
+
+// THE BOTTOM LEGEND ----------------------
+var legend_polarity = svg.selectAll(".legend_polarity")
+    .data(color.domain())
+    .enter().append("g")
+    .attr("class", "legend_polarity")
+    .attr("transform", function(d, i) {
+        var xpos = i * 80;
+        return "translate(" + xpos + ")";
+    })
+    .style("opacity", 0.0);
+
+// Saving this for record keeping
+// var ypos = (i % 2) == 0 ? 0 : 40;
+// var xpos = Math.floor(i / 2) * 160;
+
+// MAKE A RECTANGLE FOR POSITIVE AND NEGATIVE POLARITY DIFFS
+// POSITIVE
+legend_polarity.append("rect")
+    .attr("x", 0)
+    .attr("y", function(d) { return height + margin.top + margin.bottom/2 - pos_pol(dataTopics[d].pol_diff)})
+    .attr("width", 60)
+    .attr("height", function(d) {
+      var ppol = dataTopics[d].pol_diff;
+      ppol = ppol >= 0 ? pos_pol(ppol) : 0;
+      return  ppol })
+    .style("fill", color)
+    .style("stroke", "black");
+
+// NEGATIVE
+legend_polarity.append("rect")
+    .attr("x", 0)
+    .attr("y", height + margin.top + margin.bottom/2)
+    .attr("width", 60)
+    .attr("height", function(d) {
+      var npol = dataTopics[d].pol_diff;
+      npol = npol < 0 ? neg_pol(npol) : 0;
+      return npol })
+    .style("fill", color)
+    .style("stroke", "black");
+
+legend_polarity.append("text")
+    .attr("x", 30)
+    .attr("y", function(d) {
+      var t_color = dataTopics[d].pol_diff;
+      t_color = t_color >= 0 ? 10 : -10;
+      return  height + margin.top + margin.bottom/2 + t_color })
+    .attr("dy", ".35em")
+    .attr("font-size", "14px")
+    .style("text-anchor", "middle")
+    .style("fill", function(d) {
+      var t_color = dataTopics[d].pol_diff;
+      t_color = t_color >= 0 ? "green" : "red";
+      return  t_color })
+    .text(function(d) { return dataTopics[d].pol_diff + "%"}
+    );
+
+// THE RIGHT SIDE LEGEND --------------------------
+var legend = svg.selectAll(".legend")
+    .data(color.domain())
+    .enter().append("g")
+    .attr("class", "legend")
+    .attr("transform", function(d, i) {
+        return "translate(0," + i * 20 + ")";
+    })
+    .attr("font-size", "12px")
+    .style("opacity", 0.2);
+
+legend.on("click", function(type) {
+        // check for opacity and switch
+        var currentTextOpacity = window.getComputedStyle(this).getPropertyValue("opacity");
+        currentTextOpacity = currentTextOpacity == 0.2 ? 1.0 : 0.2;
+        d3.select(this)
+        .transition()
+        .duration(500)
+        .style("opacity", currentTextOpacity);
+
+        // filter out the ones we want to show and toggle style
+        d3.selectAll(".dot")
+        .transition()
+        .duration(500)
+        .filter(function(d) {
+            return d.topic_keywords == type;
+              })
+        .style("opacity", function(){
+            var currentDotOpacity = window.getComputedStyle(this).getPropertyValue("opacity");
+            currentDotOpacity = currentDotOpacity == 0.0 ? 1.0 : 0.0;
+            return currentDotOpacity;
+              });
+
+          // toggle the bottom legend
+          d3.selectAll(".legend_polarity")
+          .transition()
+          .duration(500)
+          .filter(function(d) {
+              return d == type;
+                })
+          .style("opacity", function(){
+              var currentLegPolOpacity = window.getComputedStyle(this).getPropertyValue("opacity");
+              currentLegPolOpacity = currentLegPolOpacity == 0.0 ? 1.0 : 0.0;
+              return currentLegPolOpacity;
+                })
+            });
+
+legend.append("rect")
+    .attr("x", width - 18)
+    .attr("width", 18)
+    .attr("height", 18)
+    .style("fill", color);
+
+legend.append("text")
+    .attr("x", width + 5)
+    .attr("y", 9)
+    .attr("dy", ".35em")
+    .style("text-anchor", "start")
+    .text(function(d) { return d; });
+
+ });
+    </script>
+  </body>
+</html>
