@@ -61,6 +61,26 @@ var svg = d3.select("body").append("svg")
   .append("g")
   .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+// Helper Text at the Top
+svg.append("text")
+    .attr("class", "helper")
+    .attr("x", 50)
+    .attr("y", 0)
+    .attr("font-family", "sans-serif")
+    .attr("font-size", "16px")
+    .text("Click on topics in the legend to toggle their display")
+    .style("fill", "DarkCyan");
+
+// Title for Sentiment
+svg.append("text")
+    .attr("x", 0)
+    .attr("y", height + 55)
+    .attr("font-family", "sans-serif")
+    .attr("font-size", "14px")
+    .text("Topic Sentiment")
+    .style("fill", "Black")
+    .style("text-decoration", "underline");
+
 
 d3.csv("data_d3.csv", function(error, data) {
   if (error) throw error;
@@ -199,6 +219,12 @@ legend.on("click", function(type) {
         .transition()
         .duration(500)
         .style("opacity", currentTextOpacity);
+
+        // hide the help text
+        d3.select(".helper")
+        .transition()
+        .duration(500)
+        .style("opacity", 0.0);
 
         // filter out the ones we want to show and toggle style
         d3.selectAll(".dot")
