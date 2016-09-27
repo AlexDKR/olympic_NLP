@@ -1,2 +1,3 @@
-# olympic_NLP
-Project using NLP on reddit/twitter data
+# Olympic Tweet Analysis using NLP
+
+Please see my blog post on this project *here*.
